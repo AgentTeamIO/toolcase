@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Validate registry.json
+        run: node -e "JSON.parse(require('fs').readFileSync('registry.json','utf8')); console.log('registry.json is valid')"
+
+      - name: Validate server.json files
+        run: |
+          found=0
+          for f in servers/*/server.json; do
+            [ -f "$f" ] || continue
+            node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))" && echo "ok: $f" || exit 1
+            found=$((found + 1))
+          done
+          echo "Validated $found server.json files"
